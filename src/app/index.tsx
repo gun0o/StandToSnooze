@@ -1,63 +1,45 @@
-import * as Device from 'expo-device';
-import { Platform, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-
-import { AnimatedIcon } from '@/components/animated-icon';
-import { HintRow } from '@/components/hint-row';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
-
-function getDevMenuHint() {
-  if (Platform.OS === 'web') {
-    return <ThemedText type="small">use browser devtools</ThemedText>;
-  }
-  if (Device.isDevice) {
-    return (
-      <ThemedText type="small">
-        shake device or press <ThemedText type="code">m</ThemedText> in terminal
-      </ThemedText>
-    );
-  }
-  const shortcut = Platform.OS === 'android' ? 'cmd+m (or ctrl+m)' : 'cmd+d';
-  return (
-    <ThemedText type="small">
-      press <ThemedText type="code">{shortcut}</ThemedText>
-    </ThemedText>
-  );
-}
+import { useState, useEffect } from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import { CameraView, useCameraPermissions, CameraType } from 'expo-camera';
 
 export default function HomeScreen() {
+  const [time, setTime] = useState(new Date());
+  const [alarmTime, setAlarmTime] = useState('5:31:00 PM');
+  const [alarmFiring, setAlarmFiring] = useState(false);
+  const [permission, requestPermission] = useCameraPermissions();
+  const [facing, setFacing] = useState<CameraType>('front');
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const now = new Date()
+      setTime(now);
+
+    if (now.toLocaleTimeString() === alarmTime) {
+      setAlarmFiring(true);
+    }
+
+    }, 1000);
+
+    return () => clearInterval(interval);
+
+  }, []);
+
+    // camera permissions
+  if (!permission) return <Text style={{color: 'red'}}>Allow StandToSnooze to access camera.</Text>
+
+  if (!permission.granted) return <Text style={{color: 'red'}}>Please allow StandToSnooze to access camera in order to use application.</Text>
+
   return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <AnimatedIcon />
-          <ThemedText type="title" style={styles.title}>
-            Welcome to&nbsp;Expo
-          </ThemedText>
-        </ThemedView>
+    <View style={styles.container}>
+      {alarmFiring && <CameraView style={styles.camera} facing={facing} />}
+      <Text style={styles.clock}>
+        {time.toLocaleTimeString()}
+      </Text>
 
-        <ThemedText type="code" style={styles.code}>
-          get started
-        </ThemedText>
-
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
-          <HintRow
-            title="Try editing"
-            hint={<ThemedText type="code">src/app/index.tsx</ThemedText>}
-          />
-          <HintRow title="Dev tools" hint={getDevMenuHint()} />
-          <HintRow
-            title="Fresh start"
-            hint={<ThemedText type="code">npm run reset-project</ThemedText>}
-          />
-        </ThemedView>
-
-        {Platform.OS === 'web' && <WebBadge />}
-      </SafeAreaView>
-    </ThemedView>
+      <Text style={styles.clock}>
+        {alarmTime}
+      </Text>
+    </View>
   );
 }
 
@@ -65,34 +47,14 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
-    flexDirection: 'row',
-  },
-  safeArea: {
-    flex: 1,
-    paddingHorizontal: Spacing.four,
     alignItems: 'center',
-    gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
-    maxWidth: MaxContentWidth,
+    backgroundColor: '#000',
   },
-  heroSection: {
-    alignItems: 'center',
-    justifyContent: 'center',
+  clock: {
+    fontSize: 48,
+    color: '#fff',
+  },
+  camera: {
     flex: 1,
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.four,
-  },
-  title: {
-    textAlign: 'center',
-  },
-  code: {
-    textTransform: 'uppercase',
-  },
-  stepContainer: {
-    gap: Spacing.three,
-    alignSelf: 'stretch',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
   },
 });
